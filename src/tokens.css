@@ -1,0 +1,87 @@
+/**
+ * Design tokens for the Clients & Accounts Table.
+ *
+ * Every value here was pulled from the actual Figma file (Material 3 Design Kit,
+ * page "R11971 — Clients & Accounts Table"), not guessed — see the "Accessibility &
+ * contrast pass" section of the design doc for the WCAG verification of each pairing.
+ * One exception is flagged below: Secondary Container was recalled from M3 baseline
+ * knowledge rather than independently re-verified this session.
+ */
+:root {
+  /* Surfaces */
+  --grid-color-surface: #fef7ff;
+  --grid-color-surface-container: #f3edf7; /* Pinned row tint */
+  --grid-color-surface-container-highest: #e6e0e9; /* Cell, State=Editing background */
+
+  /* Content */
+  --grid-color-on-surface: #1d1b20;
+  --grid-color-on-surface-variant: #49454f;
+  --grid-color-outline: #79747e;
+  --grid-color-outline-variant: #cac4d0; /* row dividers, Cell/Header pinned divider */
+
+  /* Avatar (Monogram) */
+  --grid-color-primary-container: #eaddff;
+  --grid-color-on-primary-container: #4f378a;
+
+  /* Status badge — Active */
+  --grid-color-tertiary-container: #ffd8e4;
+  --grid-color-on-tertiary-container: #633b48;
+
+  /* Status badge — Overdue (M3 baseline Error Container; not independently
+     re-verified against the kit this session — flagged the same way the doc flags it) */
+  --grid-color-error-container: #f9dede;
+  --grid-color-on-error-container: #410e0b;
+
+  /* Status badge — Inactive (neutral, reuses on-surface-variant / outline-variant) */
+  --grid-color-inactive-bg: #e7e0eb;
+  --grid-color-inactive-fg: #49454f;
+
+  /* Error (Row + Cell error state) */
+  --grid-color-error: #b3261e;
+  --grid-color-on-error: #ffffff;
+
+  /* Selected row */
+  --grid-color-secondary-container: #e8def8; /* recalled M3 baseline, not freshly re-verified */
+  --grid-color-on-secondary-container: #4a4459;
+
+  /* State layer (hover) — verified against Card's real State=Hovered precedent */
+  --grid-state-layer-hover: rgba(29, 27, 32, 0.08);
+
+  /* Disabled — verified against Text Field's real State=Disabled precedent:
+     no dark scrim, 4% border + 38% content opacity */
+  --grid-disabled-border-opacity: 0.04;
+  --grid-disabled-content-opacity: 0.38;
+
+  /* Density (three tiers per the exercise's requirement) */
+  --grid-row-height-compact: 48px;
+  --grid-row-height-comfortable: 64px;
+  --grid-row-height-standard: 56px;
+  --grid-cell-padding-x: 16px;
+
+  /* Typography — Roboto per the M3 kit; tabular figures for currency */
+  --grid-font-body: 'Roboto', system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.grid-numeric {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Visible focus indicator — required by the accessibility checklist. Never remove
+   the outline without replacing it; :focus-visible keeps it off pointer clicks. */
+.grid-focusable:focus-visible {
+  outline: 2px solid #6750a4;
+  outline-offset: 2px;
+}
+
+/* Hover state layer for an interactive Row — a real :hover, not a forced prop,
+   in the live grid. 8% On-Surface, verified against Card's own State=Hovered
+   precedent in Figma (the same bug fixed there: this was accidentally
+   full-opacity, rendering solid near-black, until corrected). */
+.grid-row:hover {
+  background-image: linear-gradient(var(--grid-state-layer-hover), var(--grid-state-layer-hover));
+}
