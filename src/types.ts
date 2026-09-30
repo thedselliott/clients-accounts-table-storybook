@@ -23,7 +23,7 @@ export type HeaderCellState =
   | 'sorted-descending'
   | 'filter-active';
 
-export type ToolbarState = 'default' | 'search-active' | 'columns-hidden';
+export type ToolbarState = 'default' | 'search-active';
 
 export type AccountStatus = 'active' | 'overdue' | 'inactive';
 

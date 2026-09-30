@@ -21,11 +21,15 @@ export interface ToolbarProps {
   onBlurSearch?: () => void;
 }
 
-/** Mirrors the Figma "Toolbar" component set: Default, Search active, Columns
- *  hidden. In the live DataGrid, `state` is derived automatically from
- *  whether the search field has focus/text — it's still exposed as a prop
- *  here so Storybook can force each of the three variants independently,
- *  matching Figma 1:1. */
+/** Mirrors the Figma "Toolbar" component set: Default, Search active. (A
+ *  third "Columns hidden" variant existed in Figma at one point, showing a
+ *  Columns button with an active/badge state — it was removed from Figma
+ *  once we confirmed the live toolbar never had that button; its
+ *  functionality was always handled by the separate Configure Columns
+ *  dropdown instead.) In the live DataGrid, `state` is derived automatically
+ *  from whether the search field has focus/text — it's still exposed as a
+ *  prop here so Storybook can force each variant independently, matching
+ *  Figma 1:1. */
 export function Toolbar({
   title,
   state = 'default',
