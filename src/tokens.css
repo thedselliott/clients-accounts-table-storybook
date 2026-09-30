@@ -35,10 +35,15 @@
   --grid-color-tertiary-container: #ffd8e4;
   --grid-color-on-tertiary-container: #633b48;
 
-  /* Status badge — Overdue (M3 baseline Error Container; not independently
-     re-verified against the kit this session — flagged the same way the doc flags it) */
-  --grid-color-error-container: #f9dede;
-  --grid-color-on-error-container: #410e0b;
+  /* Status badge — Overdue — verified directly against the live Figma file's
+     M3 variables (Schemes/Error Container, Schemes/On Error Container,
+     Light mode) via the Figma MCP. The previous values here were wrong on
+     both counts: Error Container was off by one channel (#f9dede vs the
+     real #f9dedc), and On Error Container was a significant miss — #410e0b
+     (near-black) instead of the actual #852221 (a medium red-brown), which
+     was visibly darkening the Overdue badge's text. */
+  --grid-color-error-container: #f9dedc;
+  --grid-color-on-error-container: #852221;
 
   /* Status badge — Inactive (neutral, reuses on-surface-variant / outline-variant) */
   --grid-color-inactive-bg: #e7e0eb;

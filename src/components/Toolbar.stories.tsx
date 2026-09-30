@@ -4,17 +4,19 @@ import { Toolbar } from './Toolbar';
 
 /**
  * Toolbar — mirrors the Figma "Toolbar" component set: Default, Search
- * active, Columns hidden.
+ * active.
  *
  * Figma property → Storybook arg mapping:
  *  - `State` variant       → `state` arg (forced here; the live DataGrid derives it automatically
  *    from whether search has a value)
  *  - `Title` text          → `title` arg
  *
- * The "Columns hidden" variant no longer carries its own count badge —
- * Toolbar doesn't take a `hiddenColumnCount` prop. That count now lives on
- * the Columns trigger itself, inside the composed DataGrid (see
- * DataGrid.tsx's Configure Columns button), not on Toolbar in isolation.
+ * A third "Columns hidden" variant existed in Figma at one point, showing a
+ * Columns button with its own count badge. It was removed from both Figma
+ * and here once we confirmed the live toolbar never had that button —
+ * Configure Columns and its count live in the composed DataGrid instead
+ * (see DataGrid.tsx's Configure Columns button), not on Toolbar in
+ * isolation.
  */
 const meta: Meta<typeof Toolbar> = {
   title: 'DataGrid/Toolbar',
@@ -22,7 +24,7 @@ const meta: Meta<typeof Toolbar> = {
   argTypes: {
     state: {
       control: 'select',
-      options: ['default', 'search-active', 'columns-hidden'],
+      options: ['default', 'search-active'],
       description: "Figma variant property: Toolbar's State",
     },
     title: { control: 'text' },
@@ -49,8 +51,4 @@ export const SearchActive: Story = {
     }
     return <Wrapper />;
   },
-};
-
-export const ColumnsHidden: Story = {
-  args: { state: 'columns-hidden' },
 };
