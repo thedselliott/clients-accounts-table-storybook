@@ -4,6 +4,13 @@ Real React + TypeScript + Storybook source for the Clients & Accounts Table
 (Option B), built to map 1:1 onto the Figma component set from the R11971
 design-skills exercise.
 
+## Links
+
+- Figma: https://www.figma.com/design/SWKjhkZnR6DDFKUdtTOHWf
+- React demo (live): https://<github-username>.github.io/clients-accounts-table-react-demo/
+- React demo repo: https://github.com/<github-username>/clients-accounts-table-react-demo
+- This Storybook (live): https://<github-username>.github.io/clients-accounts-table-storybook/
+
 ## Setup
 
 ```bash
