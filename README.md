@@ -7,9 +7,9 @@ design-skills exercise.
 ## Links
 
 - Figma: https://www.figma.com/design/SWKjhkZnR6DDFKUdtTOHWf
-- React demo (live): https://<github-username>.github.io/clients-accounts-table-react-demo/
-- React demo repo: https://github.com/<github-username>/clients-accounts-table-react-demo
-- This Storybook (live): https://<github-username>.github.io/clients-accounts-table-storybook/
+- React demo (live): https://thedselliott.github.io/clients-accounts-table-react-demo/
+- React demo repo: https://github.com/thedselliott/clients-accounts-table-react-demo
+- This Storybook (live): https://thedselliott.github.io/clients-accounts-table-storybook/
 
 ## Setup
 
