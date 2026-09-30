@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import type { ToolbarState } from '../types';
 
 export interface ToolbarProps {
@@ -7,14 +7,18 @@ export interface ToolbarProps {
   searchValue?: string;
   onSearchChange?: (value: string) => void;
   onOpenSearch?: () => void;
-  /** Number of columns currently hidden via the Columns panel. Deliberately
-   *  NOT called `activeFilterCount` — see the design doc's writeup on the
-   *  "Filters" naming collision this replaced. Toggling which columns are
-   *  visible is a different operation from filtering row VALUES (that lives
-   *  on each HeaderCell's own per-column filter icon), so this button and
-   *  its badge are named for what they actually do. */
-  hiddenColumnCount?: number;
-  onOpenColumns?: () => void;
+  /** Fires when focus leaves the search field/clear-button group entirely
+   *  (not when it just moves between the input and the clear button — see
+   *  the wrapping div's onBlur below). The caller decides whether this
+   *  actually collapses anything: in DataGrid, `state` is derived as
+   *  `searchOpen || searchTerm ? 'search-active' : 'default'`, so calling
+   *  this while there's still text in the field is harmless — the field
+   *  stays open because of the searchTerm half of that check, not this
+   *  callback. That's deliberate: collapsing a field that still has an
+   *  active query would hide a live filter with no visible sign it's still
+   *  narrowing the grid. The clear (X) button is the explicit way to both
+   *  empty and close it. */
+  onBlurSearch?: () => void;
 }
 
 /** Mirrors the Figma "Toolbar" component set: Default, Search active, Columns
@@ -22,8 +26,30 @@ export interface ToolbarProps {
  *  whether the search field has focus/text — it's still exposed as a prop
  *  here so Storybook can force each of the three variants independently,
  *  matching Figma 1:1. */
-export function Toolbar({ title, state = 'default', searchValue = '', onSearchChange, onOpenSearch, hiddenColumnCount = 0, onOpenColumns }: ToolbarProps) {
+export function Toolbar({
+  title,
+  state = 'default',
+  searchValue = '',
+  onSearchChange,
+  onOpenSearch,
+  onBlurSearch,
+}: ToolbarProps) {
   const showSearchField = state === 'search-active' || searchValue.length > 0;
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Clicking the search icon only sets `searchOpen` — it never puts actual
+  // keyboard focus on the input that appears (there's nothing to focus yet
+  // at the moment of that click; the field doesn't exist in the DOM until
+  // this re-renders). Without this, the field's own onBlur below never has
+  // anything to fire from: nothing was ever focused, so nothing ever blurs,
+  // and clicking anywhere else in the grid would silently leave an empty
+  // field open forever. Runs after the field mounts (this effect fires
+  // post-render), so the ref is already attached.
+  useEffect(() => {
+    if (showSearchField) {
+      searchInputRef.current?.focus();
+    }
+  }, [showSearchField]);
 
   return (
     <div
@@ -68,6 +94,18 @@ export function Toolbar({ title, state = 'default', searchValue = '', onSearchCh
 
       {showSearchField && (
         <div
+          // Fires when focus leaves this whole group, not when it just moves
+          // between the input and the clear button below (both live inside
+          // this same div) — e.relatedTarget is the element about to receive
+          // focus, so contains() tells the two cases apart. Clicking the
+          // clear button still counts as "staying inside" even though it
+          // removes the thing focus was just on, since relatedTarget is
+          // resolved against the *new* focus target, not the old value.
+          onBlur={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+              onBlurSearch?.();
+            }
+          }}
           style={{
             flex: 1,
             display: 'flex',
@@ -80,11 +118,12 @@ export function Toolbar({ title, state = 'default', searchValue = '', onSearchCh
             background: 'var(--grid-color-surface)',
           }}
         >
-          <svg width={20} height={20} viewBox="0 0 24 24" aria-hidden="true">
+          <svg width={20} height={20} viewBox="0 0 24 24" aria-hidden="true" style={{ flexShrink: 0 }}>
             <circle cx="11" cy="11" r="6" fill="none" stroke="var(--grid-color-on-surface-variant)" strokeWidth={2} />
             <line x1="16" y1="16" x2="21" y2="21" stroke="var(--grid-color-on-surface-variant)" strokeWidth={2} />
           </svg>
           <input
+            ref={searchInputRef}
             type="text"
             value={searchValue}
             onChange={(e) => onSearchChange?.(e.target.value)}
@@ -93,6 +132,7 @@ export function Toolbar({ title, state = 'default', searchValue = '', onSearchCh
             className="grid-focusable"
             style={{
               flex: 1,
+              minWidth: 0,
               border: 'none',
               outline: 'none',
               background: 'transparent',
@@ -101,58 +141,45 @@ export function Toolbar({ title, state = 'default', searchValue = '', onSearchCh
               color: 'var(--grid-color-on-surface)',
             }}
           />
+          {searchValue.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                // Clears the text but deliberately does NOT collapse the
+                // field itself — focus never leaves this group (it moves
+                // from the input to this button, both inside the onBlur
+                // wrapper above), and refocusing the input lets the person
+                // immediately type a new query instead of having to click
+                // back into an empty field. It'll only actually collapse
+                // once they blur away from it while it's empty, same as any
+                // other empty search field.
+                onSearchChange?.('');
+                searchInputRef.current?.focus();
+              }}
+              className="grid-focusable"
+              aria-label="Clear search"
+              style={{
+                width: 20,
+                height: 20,
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
+                background: 'none',
+                border: 'none',
+                borderRadius: '50%',
+                cursor: 'pointer',
+              }}
+            >
+              <svg width={16} height={16} viewBox="0 0 24 24" aria-hidden="true">
+                <line x1="6" y1="6" x2="18" y2="18" stroke="var(--grid-color-on-surface-variant)" strokeWidth={2} strokeLinecap="round" />
+                <line x1="18" y1="6" x2="6" y2="18" stroke="var(--grid-color-on-surface-variant)" strokeWidth={2} strokeLinecap="round" />
+              </svg>
+            </button>
+          )}
         </div>
       )}
-
-      <button
-        type="button"
-        onClick={onOpenColumns}
-        className="grid-focusable"
-        aria-label="Columns"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          height: 32,
-          padding: '0 12px',
-          border: 'none',
-          borderRadius: 16,
-          background: hiddenColumnCount > 0 ? 'var(--grid-color-primary-container)' : 'transparent',
-          color: hiddenColumnCount > 0 ? 'var(--grid-color-on-primary-container)' : 'var(--grid-color-on-surface-variant)',
-          cursor: 'pointer',
-          fontFamily: 'inherit',
-          fontSize: 12,
-          fontWeight: 500,
-        }}
-      >
-        {/* Three vertical bars — a distinct glyph from HeaderCell's funnel icon,
-            on purpose: this toggles which columns show, it doesn't filter row
-            values, so it shouldn't borrow the "filter" funnel's shape either. */}
-        <svg width={18} height={18} viewBox="0 0 24 24" aria-hidden="true">
-          <rect x="4" y="4" width="4" height="16" rx="1" fill="currentColor" />
-          <rect x="10" y="4" width="4" height="16" rx="1" fill="currentColor" />
-          <rect x="16" y="4" width="4" height="16" rx="1" fill="currentColor" />
-        </svg>
-        Columns
-        {hiddenColumnCount > 0 && (
-          <span
-            style={{
-              minWidth: 18,
-              height: 18,
-              borderRadius: 9,
-              background: 'var(--grid-color-on-primary-container)',
-              color: 'var(--grid-color-primary-container)',
-              fontSize: 11,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '0 4px',
-            }}
-          >
-            {hiddenColumnCount}
-          </span>
-        )}
-      </button>
     </div>
   );
 }

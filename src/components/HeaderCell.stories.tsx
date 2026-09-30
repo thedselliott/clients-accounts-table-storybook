@@ -8,7 +8,11 @@ import { HeaderCell } from './HeaderCell';
  * Figma property → Storybook arg mapping:
  *  - `State` variant      → `state` arg (drives the real `aria-sort` attribute — see a11y checklist)
  *  - `Column label` text  → `label` arg
- *  - `Pinned` boolean     → `pinned` arg
+ *  - `Pinned` boolean     → `pinned` arg (tonal tint) + `pinnedBoundary` arg (the divider) together —
+ *    in the composed DataGrid these can now differ (a column pinned in the MIDDLE of a multi-column
+ *    frozen group gets the tint but not the divider, which only belongs on the group's last column),
+ *    but an isolated single-cell story has no "group" to be a non-boundary member of, so the Pinned
+ *    story below sets both to reproduce the one real Figma "Pinned" variant faithfully.
  */
 const meta: Meta<typeof HeaderCell> = {
   title: 'DataGrid/HeaderCell',
@@ -20,7 +24,11 @@ const meta: Meta<typeof HeaderCell> = {
       description: "Figma variant property: Header cell's State",
     },
     label: { control: 'text', description: 'Figma component property: Column label' },
-    pinned: { control: 'boolean', description: 'Figma variant property: Pinned' },
+    pinned: { control: 'boolean', description: 'Figma variant property: Pinned (tonal tint)' },
+    pinnedBoundary: {
+      control: 'boolean',
+      description: 'The divider marking the end of the frozen zone — see Pinned below.',
+    },
     align: { control: 'select', options: ['left', 'right'] },
     filterActive: {
       control: 'boolean',
@@ -59,7 +67,7 @@ export const SortedAndFiltered: Story = {
 export const MultiSortSecondary: Story = {
   args: { state: 'sorted-ascending', sortPriority: 2, label: 'Balance', align: 'right', width: 140 },
 };
-export const Pinned: Story = { args: { state: 'default', pinned: true } };
+export const Pinned: Story = { args: { state: 'default', pinned: true, pinnedBoundary: true } };
 export const RightAligned: Story = {
   args: { state: 'default', label: 'Balance', align: 'right', width: 140 },
 };

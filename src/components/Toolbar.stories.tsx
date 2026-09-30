@@ -10,10 +10,11 @@ import { Toolbar } from './Toolbar';
  *  - `State` variant       → `state` arg (forced here; the live DataGrid derives it automatically
  *    from whether search has a value)
  *  - `Title` text          → `title` arg
- *  - Hidden column count   → `hiddenColumnCount` arg (drives the Columns-hidden badge). Named for
- *    what it does — toggling which columns show — rather than "Filters", which now refers to the
- *    separate per-column value-filtering feature on each HeaderCell (see HeaderCell.stories.tsx's
- *    SortedAndFiltered story, and the design doc's writeup of this naming collision).
+ *
+ * The "Columns hidden" variant no longer carries its own count badge —
+ * Toolbar doesn't take a `hiddenColumnCount` prop. That count now lives on
+ * the Columns trigger itself, inside the composed DataGrid (see
+ * DataGrid.tsx's Configure Columns button), not on Toolbar in isolation.
  */
 const meta: Meta<typeof Toolbar> = {
   title: 'DataGrid/Toolbar',
@@ -25,7 +26,6 @@ const meta: Meta<typeof Toolbar> = {
       description: "Figma variant property: Toolbar's State",
     },
     title: { control: 'text' },
-    hiddenColumnCount: { control: 'number' },
   },
   args: {
     title: 'Clients & Accounts',
@@ -52,5 +52,5 @@ export const SearchActive: Story = {
 };
 
 export const ColumnsHidden: Story = {
-  args: { state: 'columns-hidden', hiddenColumnCount: 2 },
+  args: { state: 'columns-hidden' },
 };

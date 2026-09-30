@@ -23,7 +23,7 @@ export type HeaderCellState =
   | 'sorted-descending'
   | 'filter-active';
 
-export type ToolbarState = 'default' | 'search-active' | 'filters-applied';
+export type ToolbarState = 'default' | 'search-active' | 'columns-hidden';
 
 export type AccountStatus = 'active' | 'overdue' | 'inactive';
 
@@ -34,6 +34,12 @@ export interface ClientAccountRow {
   avatarLetter: string;
   status: AccountStatus;
   balance: number;
+  /** A pinned ROW (visually tinted — see Row.tsx's rowBackground), e.g. a
+   *  flagged or important account kept easy to spot. Unrelated to
+   *  ColumnDef's own `pinned` below despite the shared name — one is about
+   *  a row's data, the other about a column freezing during horizontal
+   *  scroll; nothing here bypasses pagination or otherwise treats a pinned
+   *  row as special beyond that tint. */
   pinned?: boolean;
   /** Row-level State is derived at render time (selected/hover/disabled/error);
    *  `disabled` and `error` are still authorable per-row as source-of-truth data
@@ -52,6 +58,27 @@ export interface ColumnDef {
   key: 'clientName' | 'status' | 'balance';
   label: string;
   sortable: boolean;
+  /** Client's identity flag: this column can't be hidden or reordered away
+   *  from first position (it's the row's identity, not an optional
+   *  attribute — see the design doc's discussion of this decision). Split
+   *  out from `pinned` below rather than reusing it, now that `pinned` is a
+   *  genuine, independently-toggleable feature of its own: before this
+   *  split, the one `pinned: true` on Client silently did double duty as
+   *  both "can't be hidden/reordered" AND "frozen while scrolling," which
+   *  meant there was no way to let a user pin Status or Balance without
+   *  also (wrongly) making it un-hideable and un-reorderable. Only Client
+   *  is ever `locked`; it's never exposed as a user-facing toggle. */
+  locked?: boolean;
+  /** Real "Column pinning" per the R11971 brief's own feature list — a
+   *  column marked pinned stays frozen (visually anchored via
+   *  `position: sticky`) while the rest of the row scrolls horizontally in
+   *  the 'scroll-frozen' responsive tier; it has no visible effect in tiers
+   *  wide enough that nothing scrolls. Client defaults to pinned (and,
+   *  being `locked`, can't be unpinned), but Status and Balance can now
+   *  also be pinned by the user via the Configure Columns panel — pinned
+   *  columns are always kept as a contiguous group starting right after
+   *  Client (see DataGrid's `toggleColumnPinned`), so the frozen zone is
+   *  always a single unbroken block, never scattered non-adjacent columns. */
   pinned?: boolean;
   visible: boolean;
 }

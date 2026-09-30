@@ -26,8 +26,15 @@ export interface RowProps {
    *  state that drives the header row (DataGrid's Filters panel). Defaults to
    *  all three so a Row rendered on its own (e.g. Storybook's Row stories)
    *  still shows everything — only the composed DataGrid passes this
-   *  explicitly, keeping it in sync with which HeaderCells are shown. */
-  visibleColumns?: ColumnDef['key'][];
+   *  explicitly, keeping it in sync with which HeaderCells are shown.
+   *
+   *  Takes full column defs (well, just the two fields Row actually needs —
+   *  see RowVisibleColumn below), not bare keys, since Row now has to know
+   *  each column's OWN `pinned` state to decide whether it belongs in the
+   *  sticky frozen group or the scrolling group (see freezeFirstColumn) —
+   *  a plain key array stopped being enough once pinning became a per-column
+   *  toggle instead of something only ever true for Client. */
+  visibleColumns?: RowVisibleColumn[];
   selected?: boolean;
   onToggleSelect?: (id: string) => void;
   /** Roving-tabindex wiring from DataGrid — see its keyboard-nav notes. */
@@ -50,7 +57,14 @@ export interface RowProps {
   freezeFirstColumn?: boolean;
 }
 
-const ALL_COLUMNS: ColumnDef['key'][] = ['clientName', 'status', 'balance'];
+/** Row only ever needs a column's key and its pinned state — never label,
+ *  sortable, or locked, all of which are header/panel-only concerns — so it
+ *  takes this narrower shape rather than a full ColumnDef. Any ColumnDef
+ *  satisfies it structurally, so DataGrid can keep passing its real column
+ *  objects straight through with no mapping step. */
+export type RowVisibleColumn = Pick<ColumnDef, 'key' | 'pinned'>;
+
+const ALL_COLUMNS: RowVisibleColumn[] = [{ key: 'clientName' }, { key: 'status' }, { key: 'balance' }];
 
 export function Row({
   row,
@@ -138,14 +152,24 @@ export function Row({
       <div style={{ position: 'relative', opacity: contentOpacity }}>
         <Avatar letter={row.avatarLetter} />
         {isError && (
+          // Doubled from 6px to 12px (~15% -> ~30% of the 40px avatar) — the
+          // original read as too subtle to catch at a glance. top/right stay
+          // at -2 (unchanged): since those anchor the dot's own top-right
+          // corner, growth extends toward the avatar's center, not sideways
+          // into the 16px gap before the checkbox, so this doesn't crowd
+          // anything next to it. It now overlaps the avatar's corner a bit
+          // instead of floating just outside it — the existing surface-
+          // colored border still cuts a clean ring around it either way, and
+          // overlapping the badge it decorates is the more conventional
+          // treatment anyway.
           <span
             aria-hidden="true"
             style={{
               position: 'absolute',
               top: -2,
               right: -2,
-              width: 6,
-              height: 6,
+              width: 12,
+              height: 12,
               borderRadius: '50%',
               background: 'var(--grid-color-error)',
               border: '1px solid var(--grid-color-surface)',
@@ -230,7 +254,29 @@ export function Row({
   // would misalign the header row against the data row again — the same
   // class of bug as Bug 1, just triggered by a new feature instead of a
   // missing flexGrow.
-  const orderedDataColumns = visibleColumns.filter((key) => key !== 'clientName');
+  const orderedDataColumns = visibleColumns.filter((c) => c.key !== 'clientName');
+
+  // Only meaningful in the row (non-card) layout while frozen: splits
+  // Status/Balance into whichever of them are pinned (join the sticky group
+  // alongside the avatar/checkbox/name) versus not (scroll normally) — the
+  // Row-side half of the same split DataGrid's header row makes. Outside
+  // the frozen tier, `pinned` has no visual meaning at all (nothing scrolls
+  // to freeze against), so every data column just renders in the one
+  // ordinary flow, same as before pinning became a per-column toggle.
+  const pinnedDataColumns = freezeFirstColumn ? orderedDataColumns.filter((c) => c.pinned) : [];
+  const scrollDataColumns = freezeFirstColumn ? orderedDataColumns.filter((c) => !c.pinned) : orderedDataColumns;
+
+  function renderDataCell(col: RowVisibleColumn) {
+    return col.key === 'status' ? (
+      <div key="status" style={{ opacity: contentOpacity, flexShrink: 0 }}>
+        <StatusBadge status={row.status} />
+      </div>
+    ) : col.key === 'balance' ? (
+      <div key="balance" style={{ opacity: contentOpacity, flexShrink: 0 }}>
+        <Cell value={balanceValue} state={row.balanceCellState ?? 'default'} />
+      </div>
+    ) : null;
+  }
 
   const balanceValue = row.balance.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 
@@ -261,15 +307,18 @@ export function Row({
           </div>
           {orderedDataColumns.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, opacity: contentOpacity }}>
-              {orderedDataColumns.map((key) =>
-                key === 'status' ? (
+              {/* Card layout never scrolls horizontally, so pinning has
+                  nothing to do here — every visible data column just renders
+                  in one plain stack, same as before pinning existed. */}
+              {orderedDataColumns.map((col) =>
+                col.key === 'status' ? (
                   <div key="status" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--grid-color-on-surface-variant)' }}>
                       Status
                     </span>
                     <StatusBadge status={row.status} />
                   </div>
-                ) : key === 'balance' ? (
+                ) : col.key === 'balance' ? (
                   <div key="balance" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--grid-color-on-surface-variant)' }}>
                       Balance
@@ -284,6 +333,14 @@ export function Row({
       ) : (
         <>
           {freezeFirstColumn ? (
+            // The sticky group now holds the avatar/checkbox/name PLUS
+            // whichever of Status/Balance are pinned — generalized from
+            // "always just Client" once pinning became a per-column toggle.
+            // The right-hand border only appears when this group actually
+            // has something to be a boundary against, matching the header's
+            // own pinnedBoundary logic (DataGrid.tsx): with nothing pinned
+            // beyond Client, this still renders the same single hairline
+            // that was there before this feature existed.
             <div
               style={{
                 position: 'sticky',
@@ -295,25 +352,17 @@ export function Row({
                 backgroundColor: rowBackground,
                 paddingRight: 16,
                 flexShrink: 0,
+                borderRight: '1px solid var(--grid-color-outline-variant)',
               }}
             >
               {leadingGroup}
+              {pinnedDataColumns.map(renderDataCell)}
             </div>
           ) : (
             leadingGroup
           )}
 
-          {orderedDataColumns.map((key) =>
-            key === 'status' ? (
-              <div key="status" style={{ opacity: contentOpacity, flexShrink: 0 }}>
-                <StatusBadge status={row.status} />
-              </div>
-            ) : key === 'balance' ? (
-              <div key="balance" style={{ opacity: contentOpacity, flexShrink: 0 }}>
-                <Cell value={balanceValue} state={row.balanceCellState ?? 'default'} />
-              </div>
-            ) : null
-          )}
+          {scrollDataColumns.map(renderDataCell)}
 
           {menuButton}
         </>

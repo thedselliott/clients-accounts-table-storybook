@@ -19,6 +19,14 @@
   --grid-color-outline: #79747e;
   --grid-color-outline-variant: #cac4d0; /* row dividers, Cell/Header pinned divider */
 
+  /* Primary — verified directly against the real "Checkboxes" component
+     (Type=Selected, State=Enabled) this session via the Figma MCP, not
+     recalled: the checked-box fill resolves to M3's Primary/On Primary pair.
+     This token didn't exist before that check — the focus ring below had
+     been hardcoding the same hex without a name to attach it to. */
+  --grid-color-primary: #6750a4;
+  --grid-color-on-primary: #ffffff;
+
   /* Avatar (Monogram) */
   --grid-color-primary-container: #eaddff;
   --grid-color-on-primary-container: #4f378a;
@@ -60,6 +68,16 @@
 
   /* Typography — Roboto per the M3 kit; tabular figures for currency */
   --grid-font-body: 'Roboto', system-ui, sans-serif;
+
+  /* Elevation — verified directly against the real "Menu (baseline)"
+     component (Density=0) this session via the Figma MCP: its effect is the
+     named style "M3/Elevation Light/2" (level 2 of M3's 0–5 elevation
+     scale), a two-layer shadow, not the single hand-rolled shadow this
+     project's Columns dropdown originally shipped with. The Columns dropdown
+     is the first surface in this component library that floats above the
+     page at all, so this is also the first elevation token this file has
+     needed. */
+  --grid-elevation-2: 0 2px 6px 2px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 * {
@@ -74,7 +92,7 @@
 /* Visible focus indicator — required by the accessibility checklist. Never remove
    the outline without replacing it; :focus-visible keeps it off pointer clicks. */
 .grid-focusable:focus-visible {
-  outline: 2px solid #6750a4;
+  outline: 2px solid var(--grid-color-primary);
   outline-offset: 2px;
 }
 
@@ -83,5 +101,65 @@
    precedent in Figma (the same bug fixed there: this was accidentally
    full-opacity, rendering solid near-black, until corrected). */
 .grid-row:hover {
+  background-image: linear-gradient(var(--grid-state-layer-hover), var(--grid-state-layer-hover));
+}
+
+/* Menu list item hover — same state-layer token and technique as .grid-row
+   above, applied to the Columns dropdown's rows. M3's own Menu list items
+   don't have a documented precedent to diverge from here; reusing the
+   existing token is the straightforward, consistent choice. */
+.grid-menu-item:hover {
+  background-image: linear-gradient(var(--grid-state-layer-hover), var(--grid-state-layer-hover));
+}
+
+/* The Configure Columns panel's checkbox-based visibility control (verified
+   against the real M3 "Checkboxes" component) was replaced with an eye/
+   eye-off icon-button toggle once the panel started also handling reorder —
+   a bare checkbox stopped having clear meaning once "select visible
+   columns" was no longer the panel's whole job. See .grid-icon-button below
+   and the EyeIcon/EyeOffIcon components in DataGrid.tsx. Nothing else in
+   this project uses .grid-checkbox (the per-column Status filter's
+   checkboxes are plain, unstyled native inputs), so the rule is removed
+   here rather than left dead. */
+
+/* Icon buttons — the Configure Columns panel's visibility toggle and
+   up/down reorder controls. Not independently re-verified against a real M3
+   "Icon Button" component (the Figma kit this project verifies against has
+   no eye/visibility icon to pair one with — see the EyeIcon comment in
+   DataGrid.tsx), so this is deliberately built from pieces THIS file has
+   already verified elsewhere rather than a new guess: the same hover
+   state-layer token as .grid-row/.grid-menu-item, and the same
+   disabled-content-opacity token already verified against Text Field's real
+   State=Disabled. A circular hit area matches M3's own icon-button
+   convention (e.g. the circular hover state-layer inside the real
+   Checkbox's 48px touch target, noted above). */
+.grid-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  margin: 0;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 50%;
+  background-color: transparent;
+  color: var(--grid-color-on-surface-variant);
+  cursor: pointer;
+}
+.grid-icon-button:hover:not(:disabled) {
+  background-image: linear-gradient(var(--grid-state-layer-hover), var(--grid-state-layer-hover));
+}
+.grid-icon-button:disabled {
+  opacity: var(--grid-disabled-content-opacity);
+  cursor: default;
+}
+
+/* Row Height's segmented-button hover — same state-layer token/technique as
+   every other hover treatment in this file (.grid-row, .grid-menu-item,
+   .grid-icon-button), layered on top of whichever fill (transparent or
+   Secondary Container) the segment's selected state has already set inline. */
+.grid-segment:hover {
   background-image: linear-gradient(var(--grid-state-layer-hover), var(--grid-state-layer-hover));
 }

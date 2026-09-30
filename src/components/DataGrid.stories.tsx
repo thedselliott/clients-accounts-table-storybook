@@ -17,12 +17,15 @@ import { sampleRows } from '../sampleData';
  *  - `rows` / `columns` / `pagination` are represented here as the `rows` arg (data) — this
  *    exercise's brief calls out `columns`, `data`, and `pagination` as example props to map;
  *    `columns` are defined internally (Client/Status/Balance, matching the Figma columns) and
- *    toggled visible/hidden AND reordered (Status/Balance only — Client stays pinned first) via
- *    the grid's own Columns panel rather than as a top-level Storybook control, since both are
- *    genuinely per-column interactive state, not a fixed prop set.
- *    Pagination was out of scope for the Figma file (Option B's composed example shows a single
- *    page of 5–6 rows) and is called out as a documented gap in the design doc rather than
- *    faked here.
+ *    toggled visible/hidden, reordered, AND pinned (Status/Balance only — Client is always
+ *    pinned first and isn't user-togglable, since it's the row's identity, not an optional
+ *    attribute) via the grid's own Configure Columns panel rather than as a top-level Storybook
+ *    control, since all three are genuinely per-column interactive state, not a fixed prop set.
+ *    Pagination is real and interactive now too (rows-per-page + Previous/Next, bottom of the
+ *    grid) — it was out of scope for the Figma file itself (Option B's composed example shows a
+ *    single page of 5–6 rows) and was tracked as a documented gap in the design doc, but that
+ *    was always about the FIGMA file's static coverage, not a ceiling on what the live Canvas
+ *    component here does.
  *  - Per-column value filtering (Status: multi-select, Balance: min/max range) lives behind each
  *    HeaderCell's own filter icon, and narrows the same `filteredRows` computation search uses —
  *    see the design doc for why this was brought into scope alongside sort rather than treated
@@ -71,10 +74,15 @@ type Story = StoryObj<typeof DataGrid>;
 
 /** The default interactive grid — try the search icon, click a column header
  *  to sort (shift-click a second header for multi-column sort), open Columns
- *  to hide/show/reorder columns, click the funnel icon on Status or Balance
- *  to filter by value, click a row checkbox (a bulk-actions bar appears) or
- *  focus a row and use Arrow keys + Space to select via keyboard, and try
- *  the density buttons under the toolbar. */
+ *  to hide/show/reorder/pin columns, click the funnel icon on Status or
+ *  Balance to filter by value, click a row checkbox (a bulk-actions bar
+ *  appears) or focus a row and use Arrow keys + Space to select via
+ *  keyboard, try the density buttons under the toolbar, and use the rows-
+ *  per-page control at the bottom (default 5, so the 6-row sample set
+ *  already spans two real pages) to try pagination. Shrink the Storybook
+ *  canvas (or see the Responsive stories below) and pin Status or Balance
+ *  from the Columns panel to see more than just Client freeze while
+ *  scrolling. */
 export const Interactive: Story = {};
 
 export const Loading: Story = {

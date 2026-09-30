@@ -4,7 +4,17 @@ import type { HeaderCellState } from '../types';
 export interface HeaderCellProps {
   label: string;
   state?: HeaderCellState;
+  /** True for every column currently in the frozen zone (Client, plus any
+   *  columns the user has pinned) — drives the tonal background that marks
+   *  the whole frozen group, not just one column. */
   pinned?: boolean;
+  /** True only for the LAST column in the frozen zone — the one bordering
+   *  the scrollable columns. Split out from `pinned` once more than one
+   *  column could be pinned at once: giving every pinned column its own
+   *  right-hand divider would draw a seam INSIDE the frozen group (e.g.
+   *  between Client and a pinned Status), when the divider's whole job is
+   *  to mark where the frozen zone ENDS and scrolling begins. */
+  pinnedBoundary?: boolean;
   width?: number | string;
   align?: 'left' | 'right';
   /** Receives the click event so DataGrid can read `e.shiftKey` for
@@ -40,6 +50,7 @@ export function HeaderCell({
   label,
   state = 'default',
   pinned = false,
+  pinnedBoundary = false,
   width,
   align = 'left',
   onSort,
@@ -72,7 +83,20 @@ export function HeaderCell({
         display: 'flex',
         alignItems: 'center',
         justifyContent: align === 'right' ? 'flex-end' : 'space-between',
-        gap: 4,
+        // No gap here (was 4). The filter button below is a 24x24 hit
+        // target with its 16x16 icon centered inside it — that alone gives
+        // 4px of true visual inset before its glyph starts. The sort
+        // button's label-to-icon gap (4px, set on the button itself) has no
+        // such inset since the button has padding: 0. So a 0 gap here makes
+        // the RENDERED gap between the sort icon and the filter icon equal
+        // to the rendered gap between the label and the sort icon — both
+        // 4px — instead of stacking this container's gap on top of the
+        // filter button's own inset for an effectively-doubled 8px. Only
+        // matters for Balance today (the only column with both onSort and
+        // onOpenFilter, packed together via justifyContent: flex-end);
+        // Client and Status each have only one child in this container, so
+        // this value is inert for them either way.
+        gap: 0,
         height: 48,
         width,
         // When no fixed width is given (the Client column), this header cell
@@ -87,7 +111,7 @@ export function HeaderCell({
         minWidth: 0,
         padding: '0 16px',
         background: pinned ? 'var(--grid-color-surface-container)' : 'transparent',
-        borderRight: pinned ? '1px solid var(--grid-color-outline-variant)' : undefined,
+        borderRight: pinnedBoundary ? '1px solid var(--grid-color-outline-variant)' : undefined,
         fontFamily: 'var(--grid-font-body)',
       }}
     >
@@ -124,13 +148,31 @@ export function HeaderCell({
         }}
       >
         {label}
-        {(state === 'sorted-ascending' || state === 'sorted-descending') && (
+        {state === 'sorted-ascending' || state === 'sorted-descending' ? (
           <svg width={16} height={16} viewBox="0 0 24 24" aria-hidden="true">
             <path
               d={state === 'sorted-ascending' ? 'M7 14l5-5 5 5H7z' : 'M7 10l5 5 5-5H7z'}
               fill="var(--grid-color-on-surface)"
             />
           </svg>
+        ) : (
+          // Sortable-but-not-currently-sorted affordance: a neutral
+          // up/down chevron pair, muted (on-surface-variant, same token the
+          // filter icon uses in its inactive state) so it reads as a quiet
+          // hint rather than competing with the bold single-direction arrow
+          // above once the column IS sorted. Gated on `onSort` (i.e. the
+          // column's `sortable` flag), not on being the Client column
+          // specifically, so every sortable header gets it — right now
+          // that's Client and Balance; Status has no onSort and stays
+          // icon-less since it isn't sortable at all.
+          onSort && (
+            <svg width={16} height={16} viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 5.83L15.17 9l1.41-1.41L12 3 7.41 7.59 8.83 9 12 5.83zm0 12.34L8.83 15l-1.41 1.41L12 21l4.59-4.59L15.17 15 12 17.83z"
+                fill="var(--grid-color-on-surface-variant)"
+              />
+            </svg>
+          )
         )}
         {sortPriority !== undefined && sortPriority > 0 && (
           <span
